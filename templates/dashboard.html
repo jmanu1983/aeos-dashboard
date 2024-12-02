@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEOS Access Control Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>AEOS Access Control Dashboard</h1>
+            <div class="status-indicator">
+                <span id="ws-status" class="dot offline"></span>
+                <span id="ws-label">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- KPI Cards -->
+        <section class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-events-today">--</div>
+                <div class="kpi-label">Events Today</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-denied">--</div>
+                <div class="kpi-label">Access Denied</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpi-doors-online">--</div>
+                <div class="kpi-label">Doors Online</div>
+            </div>
+            <div class="kpi-card alert">
+                <div class="kpi-value" id="kpi-alerts">--</div>
+                <div class="kpi-label">Security Alerts</div>
+            </div>
+        </section>
+
+        <div class="grid-2col">
+            <!-- Live Event Feed -->
+            <section class="card">
+                <h2>Live Access Events</h2>
+                <div class="table-wrapper">
+                    <table id="events-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Person</th>
+                                <th>Access Point</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Hourly Traffic Chart -->
+            <section class="card">
+                <h2>Hourly Traffic</h2>
+                <canvas id="hourly-chart"></canvas>
+            </section>
+        </div>
+
+        <div class="grid-2col">
+            <!-- Top Access Points -->
+            <section class="card">
+                <h2>Busiest Access Points (24h)</h2>
+                <canvas id="top-ap-chart"></canvas>
+            </section>
+
+            <!-- Security Alerts -->
+            <section class="card">
+                <h2>Security Alerts</h2>
+                <div class="table-wrapper">
+                    <table id="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Alert</th>
+                                <th>Access Point</th>
+                                <th>Person</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Door Status -->
+        <section class="card">
+            <h2>Door Status</h2>
+            <div id="door-grid" class="door-grid"></div>
+        </section>
+    </main>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
