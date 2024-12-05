@@ -1,4 +1,4 @@
-# AEOS Real-Time Dashboard
+# AEOS Dashboard temps réel
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green?logo=flask)
@@ -6,46 +6,44 @@
 ![WebSocket](https://img.shields.io/badge/WebSocket-SocketIO-black?logo=socketdotio)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-A **real-time monitoring dashboard** for the Nedap AEOS access control system. Provides live visibility into access events, door status, traffic analytics, and security alerts — all powered by SQL Server queries and WebSocket push.
+**Dashboard de supervision temps réel** pour le système de contrôle d'accès Nedap AEOS. Fournit une visibilité en direct sur les événements d'accès, l'état des portes, les statistiques de trafic et les alertes de sécurité — le tout alimenté par des requêtes SQL Server et du push WebSocket.
 
-![Dashboard Preview](https://img.shields.io/badge/Preview-Dark%20Theme-0f1117?style=for-the-badge)
+## Fonctionnalités
 
-## Features
-
-- **Live Event Feed** — Access events pushed in real-time via WebSocket (Socket.IO)
-- **Door Status Monitoring** — Online/offline/alarm state for all access points
-- **Hourly Traffic Analytics** — Stacked bar chart of granted vs. denied events
-- **Top Access Points** — Ranking of busiest doors over 24h
-- **Security Alerts** — Tailgating, forced doors, held-open, and denied access
-- **KPI Cards** — At-a-glance metrics (events today, denied, doors online, alerts)
-- **REST API** — All data available as JSON for third-party integration
-- **Modern Dark UI** — Responsive CSS Grid layout, Chart.js visualizations
+- **Flux d'événements en direct** — Événements d'accès poussés en temps réel via WebSocket (Socket.IO)
+- **Monitoring des portes** — État en ligne/hors ligne/alarme de tous les points d'accès
+- **Statistiques de trafic horaire** — Graphique empilé accès accordés vs refusés
+- **Classement des points d'accès** — Portes les plus fréquentées sur 24h
+- **Alertes de sécurité** — Tailgating, portes forcées, maintenues ouvertes, accès refusés
+- **Cartes KPI** — Métriques en un coup d'oeil (événements du jour, refusés, portes en ligne, alertes)
+- **API REST** — Toutes les données disponibles en JSON pour intégration tierce
+- **Interface moderne sombre** — Layout responsive CSS Grid, visualisations Chart.js
 
 ## Architecture
 
 ```
-┌──────────────┐     SQL queries     ┌──────────────────┐
-│  SQL Server  │ ◄──────────────────► │  Flask Backend   │
+┌──────────────┐     Requêtes SQL    ┌──────────────────┐
+│  SQL Server  │ ◄──────────────────► │  Backend Flask   │
 │  (aeosdb)    │                      │  + SocketIO      │
 └──────────────┘                      └────────┬─────────┘
                                                │
-                                     WebSocket │ REST API
+                                     WebSocket │ API REST
                                                │
                                       ┌────────▼─────────┐
-                                      │  Browser Client   │
+                                      │  Client navigateur│
                                       │  Chart.js + Live  │
                                       └──────────────────┘
 ```
 
-## Tech Stack
+## Stack technique
 
-| Component | Technology |
-|-----------|-----------|
+| Composant | Technologie |
+|-----------|------------|
 | Backend | Python 3.10+, Flask 3, Flask-SocketIO |
-| Database | SQL Server 2019+ (pyodbc) |
+| Base de données | SQL Server 2019+ (pyodbc) |
 | Frontend | Vanilla JS, Chart.js 4, Socket.IO client |
-| Styling | Custom CSS (dark theme, CSS Grid) |
-| Real-time | WebSocket via Socket.IO |
+| Style | CSS personnalisé (thème sombre, CSS Grid) |
+| Temps réel | WebSocket via Socket.IO |
 
 ## Installation
 
@@ -65,66 +63,66 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` with your SQL Server connection details:
+Modifier `.env` avec vos paramètres de connexion SQL Server :
 
 ```ini
-DB_SERVER=your-sql-server
+DB_SERVER=votre-serveur-sql
 DB_NAME=aeosdb
-DB_USER=your_user
-DB_PASSWORD=your_password
+DB_USER=votre_utilisateur
+DB_PASSWORD=votre_mot_de_passe
 ```
 
-## Usage
+## Utilisation
 
 ```bash
 python app.py
 ```
 
-Open http://localhost:5000 in your browser.
+Ouvrir http://localhost:5000 dans votre navigateur.
 
-### REST API Endpoints
+### Points d'accès API REST
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check + DB status |
-| `/api/events/recent?limit=50&hours=1` | GET | Recent access events |
-| `/api/doors/status` | GET | All door statuses |
-| `/api/analytics/hourly?date=2026-02-10` | GET | Hourly traffic breakdown |
-| `/api/analytics/top-access-points?limit=10` | GET | Busiest access points |
-| `/api/alerts?limit=20&hours=24` | GET | Security alerts |
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/health` | GET | Vérification de santé + état de la base |
+| `/api/events/recent?limit=50&hours=1` | GET | Événements d'accès récents |
+| `/api/doors/status` | GET | État de toutes les portes |
+| `/api/analytics/hourly?date=2026-02-10` | GET | Répartition horaire du trafic |
+| `/api/analytics/top-access-points?limit=10` | GET | Points d'accès les plus fréquentés |
+| `/api/alerts?limit=20&hours=24` | GET | Alertes de sécurité |
 
-### WebSocket Events
+### Événements WebSocket
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `new_events` | Server → Client | New access events (pushed every 5s) |
-| `status` | Server → Client | Connection confirmation |
+| Événement | Direction | Description |
+|-----------|-----------|-------------|
+| `new_events` | Serveur → Client | Nouveaux événements d'accès (poussés toutes les 5s) |
+| `status` | Serveur → Client | Confirmation de connexion |
 
-## Project Structure
+## Structure du projet
 
 ```
 aeos-dashboard/
-├── app.py                  # Flask + SocketIO backend
+├── app.py                  # Backend Flask + SocketIO
 ├── templates/
-│   └── dashboard.html      # Main dashboard page
+│   └── dashboard.html      # Page principale du dashboard
 ├── static/
-│   ├── style.css           # Dark theme styling
-│   └── dashboard.js        # Client-side logic + charts
-├── .env.example            # Configuration template
-├── requirements.txt        # Python dependencies
+│   ├── style.css           # Thème sombre
+│   └── dashboard.js        # Logique client + graphiques
+├── .env.example            # Modèle de configuration
+├── requirements.txt        # Dépendances Python
 └── README.md
 ```
 
-## SQL Server Requirements
+## Prérequis SQL Server
 
-The dashboard reads from standard AEOS database tables:
-- `dbo.Event` — Access events
-- `dbo.Person` — Person records
-- `dbo.Carrier` — Badge/carrier records
-- `dbo.AccessPoint` — Door/reader configuration
+Le dashboard lit les tables standard de la base AEOS :
+- `dbo.Event` — Événements d'accès
+- `dbo.Person` — Fiches personnes
+- `dbo.Carrier` — Badges/porteurs
+- `dbo.AccessPoint` — Configuration portes/lecteurs
 
-> Requires read-only access to the AEOS database. No writes are performed.
+> Nécessite un accès en lecture seule à la base AEOS. Aucune écriture n'est effectuée.
 
-## License
+## Licence
 
-This project is licensed under the MIT License.
+Ce projet est sous licence MIT.
