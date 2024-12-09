@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AEOS Access Control Dashboard</title>
+    <title>AEOS — Dashboard Contrôle d'Accès</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -11,10 +11,10 @@
 <body>
     <header>
         <div class="header-content">
-            <h1>AEOS Access Control Dashboard</h1>
+            <h1>AEOS — Dashboard Contrôle d'Accès</h1>
             <div class="status-indicator">
                 <span id="ws-status" class="dot offline"></span>
-                <span id="ws-label">Connecting...</span>
+                <span id="ws-label">Connexion…</span>
             </div>
         </div>
     </header>
@@ -24,34 +24,35 @@
         <section class="kpi-row">
             <div class="kpi-card">
                 <div class="kpi-value" id="kpi-events-today">--</div>
-                <div class="kpi-label">Events Today</div>
+                <div class="kpi-label">Événements du jour</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-value" id="kpi-denied">--</div>
-                <div class="kpi-label">Access Denied</div>
+                <div class="kpi-label">Accès refusés</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-value" id="kpi-doors-online">--</div>
-                <div class="kpi-label">Doors Online</div>
+                <div class="kpi-value" id="kpi-access-points">--</div>
+                <div class="kpi-label">Points d'accès</div>
             </div>
             <div class="kpi-card alert">
                 <div class="kpi-value" id="kpi-alerts">--</div>
-                <div class="kpi-label">Security Alerts</div>
+                <div class="kpi-label">Alertes sécurité</div>
             </div>
         </section>
 
         <div class="grid-2col">
             <!-- Live Event Feed -->
             <section class="card">
-                <h2>Live Access Events</h2>
+                <h2>Événements en direct (SOAP findEvent)</h2>
                 <div class="table-wrapper">
                     <table id="events-table">
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>Person</th>
-                                <th>Access Point</th>
-                                <th>Status</th>
+                                <th>DateTime</th>
+                                <th>CarrierFullName</th>
+                                <th>AccesspointName</th>
+                                <th>Identifier</th>
+                                <th>EventTypeName</th>
                             </tr>
                         </thead>
                         <tbody id="events-body"></tbody>
@@ -61,7 +62,7 @@
 
             <!-- Hourly Traffic Chart -->
             <section class="card">
-                <h2>Hourly Traffic</h2>
+                <h2>Trafic horaire (vw_AeosEventLog)</h2>
                 <canvas id="hourly-chart"></canvas>
             </section>
         </div>
@@ -69,21 +70,22 @@
         <div class="grid-2col">
             <!-- Top Access Points -->
             <section class="card">
-                <h2>Busiest Access Points (24h)</h2>
+                <h2>Points d'accès les plus fréquentés (24h)</h2>
                 <canvas id="top-ap-chart"></canvas>
             </section>
 
             <!-- Security Alerts -->
             <section class="card">
-                <h2>Security Alerts</h2>
+                <h2>Alertes sécurité</h2>
                 <div class="table-wrapper">
                     <table id="alerts-table">
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>Alert</th>
-                                <th>Access Point</th>
-                                <th>Person</th>
+                                <th>DateTime</th>
+                                <th>Alerte</th>
+                                <th>AccesspointName</th>
+                                <th>CarrierFullName</th>
+                                <th>Identifier</th>
                             </tr>
                         </thead>
                         <tbody id="alerts-body"></tbody>
@@ -92,9 +94,9 @@
             </section>
         </div>
 
-        <!-- Door Status -->
+        <!-- Access Points from SOAP -->
         <section class="card">
-            <h2>Door Status</h2>
+            <h2>Points d'accès AEOS (SOAP findAccessPoint)</h2>
             <div id="door-grid" class="door-grid"></div>
         </section>
     </main>

@@ -2,6 +2,8 @@
  * AEOS Dashboard — Client-side logic
  *
  * Handles WebSocket connection, REST API polling, and Chart.js rendering.
+ * All field names align with the AEOS WSDL EventInfo schema:
+ *   DateTime, EventTypeName, AccesspointName, CarrierFullName, Identifier, etc.
  */
 
 // ---------------------------------------------------------------------------
@@ -17,7 +19,7 @@ socket.on("connect", () => {
 
 socket.on("disconnect", () => {
     document.getElementById("ws-status").classList.replace("online", "offline");
-    document.getElementById("ws-label").textContent = "Disconnected";
+    document.getElementById("ws-label").textContent = "Déconnecté";
 });
 
 socket.on("new_events", (events) => {
@@ -40,23 +42,37 @@ function formatTime(iso) {
     return d.toLocaleTimeString("fr-CH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+/**
+ * Classify an AEOS EventTypeName into a display category.
+ */
+function classifyEvent(eventTypeName) {
+    if (!eventTypeName) return { cls: "other", label: eventTypeName || "--" };
+    const lower = eventTypeName.toLowerCase();
+    if (lower.startsWith("access granted"))  return { cls: "granted", label: "Accordé" };
+    if (lower.startsWith("access denied"))   return { cls: "denied", label: "Refusé" };
+    if (lower === "door forced open")        return { cls: "alarm", label: "Porte forcée" };
+    if (lower === "door held open")          return { cls: "alarm", label: "Porte maintenue" };
+    if (lower === "tailgating")              return { cls: "alarm", label: "Tailgating" };
+    return { cls: "other", label: eventTypeName };
+}
+
 // ---------------------------------------------------------------------------
-// Events table
+// Events table — uses AEOS EventInfo fields
 // ---------------------------------------------------------------------------
 
 function prependEvents(events) {
     const tbody = document.getElementById("events-body");
     events.forEach((evt) => {
         const tr = document.createElement("tr");
-        const statusClass = evt.Granted ? "granted" : "denied";
-        const statusText = evt.Granted ? "Granted" : "Denied";
-        const name = [evt.LastName, evt.FirstName].filter(Boolean).join(", ") || "Unknown";
+        const { cls, label } = classifyEvent(evt.EventTypeName);
+        const name = evt.CarrierFullName || "--";
 
         tr.innerHTML = `
-            <td>${formatTime(evt.EventTime)}</td>
+            <td>${formatTime(evt.DateTime)}</td>
             <td>${name}</td>
-            <td>${evt.AccessPoint || "--"}</td>
-            <td><span class="badge ${statusClass}">${statusText}</span></td>
+            <td>${evt.AccesspointName || "--"}</td>
+            <td>${evt.Identifier || "--"}</td>
+            <td><span class="badge ${cls}">${label}</span></td>
         `;
         tbody.insertBefore(tr, tbody.firstChild);
     });
@@ -82,20 +98,19 @@ async function loadRecentEvents() {
 
 async function updateKPIs() {
     try {
-        const [evtData, alertData, doorData] = await Promise.all([
+        const [evtData, alertData, apData] = await Promise.all([
             fetchJSON("/api/analytics/hourly"),
             fetchJSON("/api/alerts?limit=200&hours=24"),
-            fetchJSON("/api/doors/status"),
+            fetchJSON("/api/accesspoints"),
         ]);
 
         const totalEvents = evtData.hourly.reduce((s, h) => s + h.EventCount, 0);
         const totalDenied = evtData.hourly.reduce((s, h) => s + h.Denied, 0);
-        const doorsOnline = doorData.doors.filter((d) => d.Online).length;
+        const totalAPs = apData.access_points ? apData.access_points.length : 0;
 
         document.getElementById("kpi-events-today").textContent = totalEvents.toLocaleString();
         document.getElementById("kpi-denied").textContent = totalDenied.toLocaleString();
-        document.getElementById("kpi-doors-online").textContent =
-            `${doorsOnline}/${doorData.doors.length}`;
+        document.getElementById("kpi-access-points").textContent = totalAPs;
         document.getElementById("kpi-alerts").textContent = alertData.alerts.length;
     } catch (e) {
         console.warn("Failed to update KPIs:", e);
@@ -124,8 +139,8 @@ async function renderHourlyChart() {
             data: {
                 labels,
                 datasets: [
-                    { label: "Granted", data: granted, backgroundColor: "#22c55e88", borderRadius: 4 },
-                    { label: "Denied", data: denied, backgroundColor: "#ef444488", borderRadius: 4 },
+                    { label: "Accordé", data: granted, backgroundColor: "#22c55e88", borderRadius: 4 },
+                    { label: "Refusé", data: denied, backgroundColor: "#ef444488", borderRadius: 4 },
                 ],
             },
             options: {
@@ -145,7 +160,7 @@ async function renderHourlyChart() {
 async function renderTopAPChart() {
     try {
         const data = await fetchJSON("/api/analytics/top-access-points?limit=8&hours=24");
-        const labels = data.access_points.map((ap) => ap.AccessPoint);
+        const labels = data.access_points.map((ap) => ap.AccesspointName);
         const counts = data.access_points.map((ap) => ap.EventCount);
 
         const ctx = document.getElementById("top-ap-chart").getContext("2d");
@@ -157,7 +172,7 @@ async function renderTopAPChart() {
                 labels,
                 datasets: [
                     {
-                        label: "Events",
+                        label: "Événements",
                         data: counts,
                         backgroundColor: "#3b82f688",
                         borderRadius: 4,
@@ -180,34 +195,29 @@ async function renderTopAPChart() {
 }
 
 // ---------------------------------------------------------------------------
-// Door status grid
+// Access Points grid (from SOAP findAccessPoint)
 // ---------------------------------------------------------------------------
 
-async function renderDoorGrid() {
+async function renderAccessPointGrid() {
     try {
-        const data = await fetchJSON("/api/doors/status");
+        const data = await fetchJSON("/api/accesspoints");
         const grid = document.getElementById("door-grid");
         grid.innerHTML = "";
 
-        data.doors.forEach((door) => {
-            const isOnline = door.Online;
-            const hasAlarm = door.AlarmState && door.AlarmState !== "NONE";
-            const dotClass = hasAlarm ? "dot alert-dot" : isOnline ? "dot online" : "dot offline";
-            const stateText = hasAlarm ? door.AlarmState : isOnline ? "Online" : "Offline";
-
+        data.access_points.forEach((ap) => {
             const tile = document.createElement("div");
             tile.className = "door-tile";
             tile.innerHTML = `
-                <span class="${dotClass}" style="${hasAlarm ? 'background:var(--warning);box-shadow:0 0 6px var(--warning)' : ''}"></span>
+                <span class="dot online"></span>
                 <div>
-                    <div class="door-name">${door.Name}</div>
-                    <div class="door-state">${stateText}</div>
+                    <div class="door-name">${ap.Name}</div>
+                    <div class="door-state">${ap.Type || "Reader"} — ${ap.HostName || ""}</div>
                 </div>
             `;
             grid.appendChild(tile);
         });
     } catch (e) {
-        console.warn("Failed to render door grid:", e);
+        console.warn("Failed to render access point grid:", e);
     }
 }
 
@@ -223,12 +233,12 @@ async function loadAlerts() {
 
         data.alerts.forEach((a) => {
             const tr = document.createElement("tr");
-            const name = [a.LastName, a.FirstName].filter(Boolean).join(", ") || "--";
             tr.innerHTML = `
-                <td>${formatTime(a.EventTime)}</td>
+                <td>${formatTime(a.DateTime)}</td>
                 <td><span class="badge alert">${a.AlertDescription}</span></td>
-                <td>${a.AccessPoint || "--"}</td>
-                <td>${name}</td>
+                <td>${a.AccesspointName || "--"}</td>
+                <td>${a.CarrierFullName || "--"}</td>
+                <td>${a.Identifier || "--"}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -247,7 +257,7 @@ async function init() {
         updateKPIs(),
         renderHourlyChart(),
         renderTopAPChart(),
-        renderDoorGrid(),
+        renderAccessPointGrid(),
         loadAlerts(),
     ]);
 
@@ -256,7 +266,7 @@ async function init() {
         updateKPIs();
         renderHourlyChart();
         renderTopAPChart();
-        renderDoorGrid();
+        renderAccessPointGrid();
         loadAlerts();
     }, 30000);
 }
